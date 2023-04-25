@@ -14,7 +14,7 @@ import java.net.URL;
 
 public class ConnectAPIExample {
     private static final String API_URL = "https://api.stackexchange.com/2.3/questions";
-    private static final String API_KEY = "your-api-key-here";
+    private static final String API_KEY = "OzEDe9HvmTuTIQ7np0nV4A((";
     private static final String TAGGED = "java";
     private static final int PAGE_SIZE = 1;
 
