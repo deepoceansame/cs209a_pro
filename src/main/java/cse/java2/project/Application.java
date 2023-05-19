@@ -19,8 +19,11 @@ public class Application {
         GrabScri grabScri = ac.getBean(GrabScri.class);
 //        grabScri.getQuestion();
 //        grabScri.getAnswersForEachQuestionCollected();
-        grabScri.seeQuestionCollected();
+//        grabScri.seeQuestionsCollected();
 //        grabScri.seeAnswersCollected();
+//        grabScri.getCommentsForCollectedQuestions();
+//        grabScri.getCommentsForCollectedAnswers();
+        grabScri.seeCommentsCollected();
     }
 
 }

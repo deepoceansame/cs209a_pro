@@ -8,8 +8,10 @@ import com.google.code.stackexchange.schema.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import cse.java2.project.Repository.AnswerModelRepository;
+import cse.java2.project.Repository.CommentModelRepository;
 import cse.java2.project.Repository.QuestionModelRepository;
 import cse.java2.project.model.AnswerModel;
+import cse.java2.project.model.CommentModel;
 import cse.java2.project.model.QuestionModel;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,10 +24,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -43,11 +42,13 @@ public class GrabScri {
 
     private final QuestionModelRepository questionModelRepository;
     private final AnswerModelRepository answerModelRepository;
+    private final CommentModelRepository commentModelRepository;
 
     @Autowired
-    public GrabScri(QuestionModelRepository questionModelRepository, AnswerModelRepository answerModelRepository) {
+    public GrabScri(QuestionModelRepository questionModelRepository, AnswerModelRepository answerModelRepository, CommentModelRepository commentModelRepository) {
         this.questionModelRepository = questionModelRepository;
         this.answerModelRepository = answerModelRepository;
+        this.commentModelRepository = commentModelRepository;
     }
 
     public static void main(String[] args) throws ParseException {
@@ -104,7 +105,7 @@ public class GrabScri {
 //        }
     }
 
-    public void seeQuestionCollected() {
+    public void seeQuestionsCollected() {
         Gson gson = new Gson();
         List<QuestionModel> questionModels = questionModelRepository.findAll();
         for (QuestionModel qm : questionModels) {
@@ -247,6 +248,249 @@ public class GrabScri {
             System.out.println(answerModel.answerJson.length());
         }
     }
+
+    public void getCommentsForCollectedQuestions() throws IOException {
+        List<QuestionModel> questionModels = questionModelRepository.findAll();
+        String uri_part1 = "https://api.stackexchange.com/2.3/questions";
+        String uri_fin = "";
+        for (QuestionModel qm : questionModels) {
+            uri_fin = uri_part1 + "/" + qm.questionId + "/comments";
+            URI uri = UriComponentsBuilder.fromUriString(uri_fin)
+                    .queryParam("key", APP_KEY)
+                    .queryParam("site", "stackoverflow")
+                    .queryParam("page", 1)
+                    .queryParam("pagesize", 30)
+                    .build().toUri();
+
+            // send request and get response
+            URL url = new URL(uri.toString());
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("content-type", "application/x-www-form-urlencoded; charset=utf-8");
+
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(new GZIPInputStream(connection.getInputStream()), StandardCharsets.UTF_8)
+            );
+            String response = reader.lines().reduce("", String::concat);
+            reader.close();
+
+            JSONObject respJsonObject = new JSONObject(response);
+            JSONArray items = respJsonObject.getJSONArray("items");
+
+            for (int i = 0; i < items.length(); i++) {
+                JSONObject item = items.getJSONObject(i);
+                System.out.println("------item-------");
+                System.out.println(item);
+                System.out.println("------item-------");
+                CommentModel commentModel = new CommentModel();
+                commentModel.commentId = item.getLong("comment_id");
+                commentModel.questionId = item.getLong("post_id");
+                commentModel.answerId = 0L;
+                commentModel.commentJson = item.toString();
+                if (!commentModelRepository.existsById(commentModel.commentId) &&
+                        (commentModel.questionId!=0||commentModel.answerId!=0)){
+                    commentModelRepository.save(commentModel);
+                }
+            }
+
+            boolean hasMore = respJsonObject.getBoolean("has_more");
+            int quota_max = respJsonObject.getInt("quota_max");
+            int quota_remaining = respJsonObject.getInt("quota_remaining");
+            System.out.println(hasMore+";"+quota_max+";"+quota_remaining);
+
+            int page = 2;
+            while (hasMore) {
+                uri = UriComponentsBuilder.fromUriString(uri_fin)
+                        .queryParam("key", APP_KEY)
+                        .queryParam("site", "stackoverflow")
+                        .queryParam("page", page)
+                        .queryParam("pagesize", 30)
+                        .build().toUri();
+
+                // send request and get response
+                url = new URL(uri.toString());
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setRequestProperty("content-type", "application/x-www-form-urlencoded; charset=utf-8");
+
+                reader = new BufferedReader(
+                        new InputStreamReader(new GZIPInputStream(connection.getInputStream()), StandardCharsets.UTF_8)
+                );
+                response = reader.lines().reduce("", String::concat);
+                reader.close();
+
+                respJsonObject = new JSONObject(response);
+                items = respJsonObject.getJSONArray("items");
+
+                for (int i = 0; i < items.length(); i++) {
+                    JSONObject item = items.getJSONObject(i);
+                    System.out.println("------item-------");
+                    System.out.println(item);
+                    System.out.println("------item-------");
+                    CommentModel commentModel = new CommentModel();
+                    commentModel.commentId = item.getLong("comment_id");
+                    commentModel.questionId = item.getLong("post_id");
+                    commentModel.answerId = 0L;
+                    commentModel.commentJson = item.toString();
+                    if (!commentModelRepository.existsById(commentModel.commentId) &&
+                            (commentModel.questionId!=0||commentModel.answerId!=0)){
+                        commentModelRepository.save(commentModel);
+                    }
+                }
+
+                hasMore = respJsonObject.getBoolean("has_more");
+                quota_max = respJsonObject.getInt("quota_max");
+                quota_remaining = respJsonObject.getInt("quota_remaining");
+                System.out.println(hasMore+";"+quota_max+";"+quota_remaining);
+                page += 1;
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+    public void getCommentsForCollectedAnswers() throws IOException {
+        List<AnswerModel> answerModelList = answerModelRepository.findAll();
+        String uri_part1 = "https://api.stackexchange.com/2.3/answers";
+        String uri_fin = "";
+        for (AnswerModel am : answerModelList) {
+            uri_fin = uri_part1 + "/" + am.answerId + "/comments";
+            URI uri = UriComponentsBuilder.fromUriString(uri_fin)
+                    .queryParam("key", APP_KEY)
+                    .queryParam("site", "stackoverflow")
+                    .queryParam("page", 1)
+                    .queryParam("pagesize", 30)
+                    .build().toUri();
+
+            // send request and get response
+            URL url = new URL(uri.toString());
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("content-type", "application/x-www-form-urlencoded; charset=utf-8");
+
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(new GZIPInputStream(connection.getInputStream()), StandardCharsets.UTF_8)
+            );
+            String response = reader.lines().reduce("", String::concat);
+            reader.close();
+
+            JSONObject respJsonObject = new JSONObject(response);
+            JSONArray items = respJsonObject.getJSONArray("items");
+
+            for (int i = 0; i < items.length(); i++) {
+                JSONObject item = items.getJSONObject(i);
+                System.out.println("------item-------");
+                System.out.println(item);
+                System.out.println("------item-------");
+                CommentModel commentModel = new CommentModel();
+                commentModel.commentId = item.getLong("comment_id");
+                commentModel.answerId = item.getLong("post_id");
+                commentModel.questionId = 0L;
+                commentModel.commentJson = item.toString();
+                if (!commentModelRepository.existsById(commentModel.commentId) &&
+                        (commentModel.questionId!=0||commentModel.answerId!=0)){
+                    commentModelRepository.save(commentModel);
+                }
+            }
+
+            boolean hasMore = respJsonObject.getBoolean("has_more");
+            int quota_max = respJsonObject.getInt("quota_max");
+            int quota_remaining = respJsonObject.getInt("quota_remaining");
+            System.out.println(hasMore+";"+quota_max+";"+quota_remaining);
+
+            int page = 2;
+            while (hasMore) {
+                uri = UriComponentsBuilder.fromUriString(uri_fin)
+                        .queryParam("key", APP_KEY)
+                        .queryParam("site", "stackoverflow")
+                        .queryParam("page", page)
+                        .queryParam("pagesize", 30)
+                        .build().toUri();
+
+                // send request and get response
+                url = new URL(uri.toString());
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setRequestProperty("content-type", "application/x-www-form-urlencoded; charset=utf-8");
+
+                reader = new BufferedReader(
+                        new InputStreamReader(new GZIPInputStream(connection.getInputStream()), StandardCharsets.UTF_8)
+                );
+                response = reader.lines().reduce("", String::concat);
+                reader.close();
+
+                respJsonObject = new JSONObject(response);
+                items = respJsonObject.getJSONArray("items");
+
+                for (int i = 0; i < items.length(); i++) {
+                    JSONObject item = items.getJSONObject(i);
+                    System.out.println("------item-------");
+                    System.out.println(item);
+                    System.out.println("------item-------");
+                    CommentModel commentModel = new CommentModel();
+                    commentModel.commentId = item.getLong("comment_id");
+                    commentModel.answerId = item.getLong("post_id");
+                    commentModel.questionId = 0L;
+                    commentModel.commentJson = item.toString();
+                    if (!commentModelRepository.existsById(commentModel.commentId) &&
+                            (commentModel.questionId!=0||commentModel.answerId!=0)){
+                        commentModelRepository.save(commentModel);
+                    }
+                }
+
+                hasMore = respJsonObject.getBoolean("has_more");
+                quota_max = respJsonObject.getInt("quota_max");
+                quota_remaining = respJsonObject.getInt("quota_remaining");
+                System.out.println(hasMore+";"+quota_max+";"+quota_remaining);
+                page += 1;
+            }
+        }
+    }
+
+
+
+    public void seeCommentsCollected() throws IOException {
+        List<CommentModel> commentModels = commentModelRepository.findAll();
+        for (CommentModel commentModel : commentModels) {
+            JSONObject commentJsonObject = new JSONObject(commentModel.commentJson);
+            long postId = commentJsonObject.getLong("post_id");
+            if (commentModel.answerId!=0 && commentModel.questionId!=0){
+                throw new IOException("all nonzero");
+            }
+            if (commentModel.answerId!=0){
+                boolean answerExist = answerModelRepository.existsById(commentModel.answerId);
+                if (!answerExist){
+                    throw new IOException("answer not exist");
+                }
+                if (postId!= commentModel.answerId){
+                    throw new IOException("ans not eq");
+                }
+            }
+            else {
+                boolean quesExist = questionModelRepository.existsById(commentModel.questionId);
+                if (!quesExist) {
+                    throw new IOException("ques not Exist");
+                }
+                if (postId!=commentModel.questionId){
+                    throw new IOException("ques not equal");
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+
+
 
     public void getAnswerWithId() {
         long answerId = 74942646;
