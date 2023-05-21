@@ -23,6 +23,7 @@ public class Application {
 //        grabScri.seeAnswersCollected();
 //        grabScri.getCommentsForCollectedQuestions();
 //        grabScri.getCommentsForCollectedAnswers();
+//        grabScri.getQuestionsAndAnswers();
         grabScri.seeCommentsCollected();
     }
 

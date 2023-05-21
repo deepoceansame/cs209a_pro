@@ -11,6 +11,7 @@ public class CommentModel {
     public long commentId;
     public long questionId;
     public long answerId;
+    public long postId;
     @Column(name="comment_json",columnDefinition="LONGTEXT")
     public String commentJson;
 

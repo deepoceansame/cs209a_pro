@@ -105,6 +105,149 @@ public class GrabScri {
 //        }
     }
 
+    public void getQuestionsAndAnswers() throws IOException, ParseException {
+
+        String sample = "/2.3/questions?page=3&pagesize=1&order=desc&sort=creation&site=stackoverflow&filter=!T3zRPxfHcGvu9GE(eX";
+        int pagesize = 30;
+        String BASE_URI = "https://api.stackexchange.com/2.3/questions";
+        String filter = "!T3zRPxfHcY78RSS7AV" ;
+
+        SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
+        String fromDateString = "1-Jan-2022";
+        Date fromDate = formatter.parse(fromDateString);
+        String toDateString = "1-Jan-2023";
+        Date toDate = formatter.parse(toDateString);
+
+        URI uri = UriComponentsBuilder.fromUriString(BASE_URI)
+                .queryParam("key", APP_KEY)
+                .queryParam("site", "stackoverflow")
+                .queryParam("page", 1)
+                .queryParam("pagesize", pagesize)
+                .queryParam("fromdate", fromDate.getTime()/1000)
+                .queryParam("todate", toDate.getTime()/1000)
+                .queryParam("order", "desc")
+                .queryParam("sort", "creation")
+                .queryParam("filter", filter)
+                .queryParam("tagged", "java")
+                .build().toUri();
+
+        URL url = new URL(uri.toString());
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("content-type", "application/x-www-form-urlencoded; charset=utf-8");
+
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new GZIPInputStream(connection.getInputStream()), StandardCharsets.UTF_8)
+        );
+        String response = reader.lines().reduce("", String::concat);
+        reader.close();
+
+        JSONObject respJsonObject = new JSONObject(response);
+        JSONArray items = respJsonObject.getJSONArray("items");
+        boolean hasMore = respJsonObject.getBoolean("has_more");
+        int quota_max = respJsonObject.getInt("quota_max");
+        int quota_remaining = respJsonObject.getInt("quota_remaining");
+        System.out.println(hasMore+";"+quota_max+";"+quota_remaining);
+
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject item = items.getJSONObject(i);
+            System.out.println("------item-------");
+            System.out.println(item);
+            System.out.println("------item-------");
+            long questionId = item.getLong("question_id");
+            int answerCount = item.getInt("answer_count");
+            if (false) {
+                JSONArray answers = item.getJSONArray("answers");
+                for (int j = 0; j < answers.length(); j++) {
+                    JSONObject answer = answers.getJSONObject(j);
+                    System.out.println("----itemAnswer----");
+                    System.out.println(answer);
+                    long answerId = answer.getLong("answer_id");
+                    AnswerModel answerModel = new AnswerModel();
+                    answerModel.answerId = answerId;
+                    answerModel.questionId = questionId;
+                    answerModel.answerJson = answer.toString();
+                    if (!answerModelRepository.existsById(answerModel.answerId) && answerModel.questionId != 0 && answerModel.answerId != 0)
+                        answerModelRepository.save(answerModel);
+                }
+            }
+            QuestionModel questionModel = new QuestionModel();
+            questionModel.questionId = questionId;
+            questionModel.questionJson = item.toString();
+            if (!questionModelRepository.existsById(questionModel.questionId) && questionModel.questionId!=0)
+                questionModelRepository.save(questionModel);
+        }
+
+        int page = 2;
+        while (hasMore) {
+            uri = UriComponentsBuilder.fromUriString(BASE_URI)
+                    .queryParam("key", APP_KEY)
+                    .queryParam("site", "stackoverflow")
+                    .queryParam("page", page)
+                    .queryParam("pagesize", pagesize)
+                    .queryParam("fromdate", fromDate.getTime()/1000)
+                    .queryParam("todate", toDate.getTime()/1000)
+                    .queryParam("order", "desc")
+                    .queryParam("sort", "creation")
+                    .queryParam("filter", filter)
+                    .queryParam("tagged", "java")
+                    .build().toUri();
+
+            url = new URL(uri.toString());
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("content-type", "application/x-www-form-urlencoded; charset=utf-8");
+
+            reader = new BufferedReader(
+                    new InputStreamReader(new GZIPInputStream(connection.getInputStream()), StandardCharsets.UTF_8)
+            );
+            response = reader.lines().reduce("", String::concat);
+            reader.close();
+
+            respJsonObject = new JSONObject(response);
+            items = respJsonObject.getJSONArray("items");
+
+            for (int i = 0; i < items.length(); i++) {
+                JSONObject item = items.getJSONObject(i);
+                System.out.println("------item-------");
+                System.out.println(item);
+                System.out.println("------item-------");
+                long questionId = item.getLong("question_id");
+
+                int answerCount = item.getInt("answer_count");
+                if (false) {
+                    JSONArray answers = item.getJSONArray("answers");
+                    for (int j = 0; j < answers.length(); j++) {
+                        JSONObject answer = answers.getJSONObject(j);
+                        System.out.println("----itemAnswer----");
+                        System.out.println(answer);
+                        long answerId = answer.getLong("answer_id");
+                        AnswerModel answerModel = new AnswerModel();
+                        answerModel.answerId = answerId;
+                        answerModel.questionId = questionId;
+                        answerModel.answerJson = answer.toString();
+                        if (!answerModelRepository.existsById(answerModel.answerId) && answerModel.questionId != 0 && answerModel.answerId != 0)
+                            answerModelRepository.save(answerModel);
+                    }
+                }
+                QuestionModel questionModel = new QuestionModel();
+                questionModel.questionId = questionId;
+                questionModel.questionJson = item.toString();
+                if (!questionModelRepository.existsById(questionModel.questionId) && questionModel.questionId!=0)
+                    questionModelRepository.save(questionModel);
+            }
+
+            hasMore = respJsonObject.getBoolean("has_more");
+            quota_max = respJsonObject.getInt("quota_max");
+            quota_remaining = respJsonObject.getInt("quota_remaining");
+            System.out.println(hasMore+";"+quota_max+";"+quota_remaining);
+            page++;
+            if (page>35){
+                break;
+            }
+        }
+    }
+
     public void seeQuestionsCollected() {
         Gson gson = new Gson();
         List<QuestionModel> questionModels = questionModelRepository.findAll();
@@ -124,6 +267,7 @@ public class GrabScri {
         List<QuestionModel> questionModels = questionModelRepository.findAll();
         String BASE_URI = "https://api.stackexchange.com/2.3/questions";
         String getAnswer_URI = "";
+        String filter = "!*MjkmySyHrsghvOs";
         for(QuestionModel qm : questionModels){
 
 //            ExampleMatcher modelMatcher = ExampleMatcher.matching()
@@ -144,11 +288,13 @@ public class GrabScri {
 
             // for each question, build uri
             getAnswer_URI = BASE_URI + "/" + qm.questionId + "/answers";
+
             URI uri = UriComponentsBuilder.fromUriString(getAnswer_URI)
                     .queryParam("key", APP_KEY)
                     .queryParam("site", "stackoverflow")
                     .queryParam("page", 1)
                     .queryParam("pagesize", 30)
+                    .queryParam("filter", filter)
                     .build().toUri();
 
             // send request and get response
@@ -193,6 +339,7 @@ public class GrabScri {
                         .queryParam("site", "stackoverflow")
                         .queryParam("page", page)
                         .queryParam("pagesize", 30)
+                        .queryParam("filter", filter)
                         .build().toUri();
 
                 // send request and get response
@@ -247,6 +394,20 @@ public class GrabScri {
         for (AnswerModel answerModel : answerModelList) {
             System.out.println(answerModel.answerJson.length());
         }
+        int totalAnswerCount = 0;
+        List<QuestionModel> questionModels = questionModelRepository.findAll();
+        long questionId = 0;
+        for (QuestionModel questionModel:questionModels){
+            questionId = questionModel.questionId;
+            JSONObject questionJson = new JSONObject(questionModel.questionJson);
+            int answer_count = questionJson.getInt("answer_count");
+            List<AnswerModel> answerModels = answerModelRepository.findByQuestionId(questionId);
+            totalAnswerCount += answer_count;
+            if (answerModels.size()!=answer_count){
+                throw  new IOException("num incorrect");
+            }
+        }
+        System.out.println(totalAnswerCount);
     }
 
     public void getCommentsForCollectedQuestions() throws IOException {
@@ -285,6 +446,7 @@ public class GrabScri {
                 CommentModel commentModel = new CommentModel();
                 commentModel.commentId = item.getLong("comment_id");
                 commentModel.questionId = item.getLong("post_id");
+                commentModel.postId = commentModel.questionId;
                 commentModel.answerId = 0L;
                 commentModel.commentJson = item.toString();
                 if (!commentModelRepository.existsById(commentModel.commentId) &&
@@ -330,6 +492,7 @@ public class GrabScri {
                     CommentModel commentModel = new CommentModel();
                     commentModel.commentId = item.getLong("comment_id");
                     commentModel.questionId = item.getLong("post_id");
+                    commentModel.postId = commentModel.questionId;
                     commentModel.answerId = 0L;
                     commentModel.commentJson = item.toString();
                     if (!commentModelRepository.existsById(commentModel.commentId) &&
@@ -392,6 +555,7 @@ public class GrabScri {
                 commentModel.commentId = item.getLong("comment_id");
                 commentModel.answerId = item.getLong("post_id");
                 commentModel.questionId = 0L;
+                commentModel.postId = commentModel.answerId;
                 commentModel.commentJson = item.toString();
                 if (!commentModelRepository.existsById(commentModel.commentId) &&
                         (commentModel.questionId!=0||commentModel.answerId!=0)){
@@ -437,6 +601,7 @@ public class GrabScri {
                     commentModel.commentId = item.getLong("comment_id");
                     commentModel.answerId = item.getLong("post_id");
                     commentModel.questionId = 0L;
+                    commentModel.postId = commentModel.answerId;
                     commentModel.commentJson = item.toString();
                     if (!commentModelRepository.existsById(commentModel.commentId) &&
                             (commentModel.questionId!=0||commentModel.answerId!=0)){
@@ -482,7 +647,36 @@ public class GrabScri {
                 }
             }
         }
+
+        int totalCommentCount = 0;
+
+        List<QuestionModel> questionModels = questionModelRepository.findAll();
+        for (QuestionModel questionModel : questionModels) {
+            JSONObject questionJson = new JSONObject(questionModel.questionJson);
+            long questionId = questionModel.questionId;
+            int commentCount = questionJson.getInt("comment_count");
+            totalCommentCount += commentCount;
+            List<CommentModel> commentModels1 = commentModelRepository.findByPostId(questionId);
+            if (commentModels1.size()!=commentCount){
+                throw new IOException("num error question");
+            }
+        }
+
+        List<AnswerModel> answerModels = answerModelRepository.findAll();
+        for (AnswerModel answerModel : answerModels) {
+            JSONObject answerJson = new JSONObject(answerModel.answerJson);
+            long answerId = answerModel.answerId;
+            int commentCount = answerJson.getInt("comment_count");
+            List<CommentModel> commentModels1 = commentModelRepository.findByPostId(answerId);
+            totalCommentCount += commentCount;
+            if (commentModels1.size()!=commentCount){
+                throw new IOException("num error answer");
+            }
+        }
+
+        System.out.println(totalCommentCount);
     }
+
 
 
 
