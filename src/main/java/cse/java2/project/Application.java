@@ -18,21 +18,22 @@ public class Application {
     public static void main(String[] args) throws ParseException, IOException {
         ac = SpringApplication.run(Application.class, args);
 //        GrabScri grabScri = ac.getBean(GrabScri.class);
-//        grabScri.getQuestion();
-//        grabScri.getAnswersForEachQuestionCollected();
-//        grabScri.seeQuestionsCollected();
-//        grabScri.seeAnswersCollected();
-//        grabScri.getCommentsForCollectedQuestions();
-//        grabScri.getCommentsForCollectedAnswers();
-//        grabScri.getQuestionsAndAnswers();
-//        grabScri.seeCommentsCollected();
+////        grabScri.getQuestion();
+////        grabScri.getAnswersForEachQuestionCollected();
+////        grabScri.seeQuestionsCollected();
+////        grabScri.seeAnswersCollected();
+////        grabScri.getCommentsForCollectedQuestions();
+////        grabScri.getCommentsForCollectedAnswers();
+////        grabScri.getQuestionsAndAnswers();
+////        grabScri.seeCommentsCollected();
+//        grabScri.storeThreadLis();
 
         WholeService ser = ac.getBean(WholeService.class);
 //        ser.numberOfAnswer();
-        ser.acceptedAnswer();
-
-
-
+//        ser.acceptedAnswer();
+//        ser.tagsProblem();
+        ser.userProblem();
+//        ser.testTh2JsonAndBack();
     }
 
 }

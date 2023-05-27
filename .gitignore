@@ -4,6 +4,8 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+st_ex_thread_model.json
+
 ### STS ###
 .apt_generated
 .classpath

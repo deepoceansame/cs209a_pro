@@ -7,5 +7,5 @@ public class StExThread {
     public QuestionModel question;
     public List<AnswerModel> answers;
     public Map<Long, List<CommentModel>> answerId2Comments;
-    public List<CommentModel> comments;
+    public List<CommentModel> commentsForquestion;
 }

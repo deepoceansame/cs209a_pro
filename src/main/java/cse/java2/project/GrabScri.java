@@ -10,9 +10,8 @@ import com.google.gson.JsonObject;
 import cse.java2.project.Repository.AnswerModelRepository;
 import cse.java2.project.Repository.CommentModelRepository;
 import cse.java2.project.Repository.QuestionModelRepository;
-import cse.java2.project.model.AnswerModel;
-import cse.java2.project.model.CommentModel;
-import cse.java2.project.model.QuestionModel;
+import cse.java2.project.Repository.StExThreadModelRepository;
+import cse.java2.project.model.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +27,8 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 import static org.springframework.data.domain.ExampleMatcher.GenericPropertyMatchers.exact;
@@ -44,11 +42,15 @@ public class GrabScri {
     private final AnswerModelRepository answerModelRepository;
     private final CommentModelRepository commentModelRepository;
 
+    private final StExThreadModelRepository stExThreadModelRepository;
+
     @Autowired
-    public GrabScri(QuestionModelRepository questionModelRepository, AnswerModelRepository answerModelRepository, CommentModelRepository commentModelRepository) {
+    public GrabScri(QuestionModelRepository questionModelRepository, AnswerModelRepository answerModelRepository,
+                    CommentModelRepository commentModelRepository, StExThreadModelRepository stExThreadModelRepository) {
         this.questionModelRepository = questionModelRepository;
         this.answerModelRepository = answerModelRepository;
         this.commentModelRepository = commentModelRepository;
+        this.stExThreadModelRepository = stExThreadModelRepository;
     }
 
     public static void main(String[] args) throws ParseException {
@@ -678,7 +680,35 @@ public class GrabScri {
     }
 
 
+    public void storeThreadLis() {
+        List<QuestionModel> questionModels = questionModelRepository.findAll();
+        List<AnswerModel> answerModels = answerModelRepository.findAll();
+        List<CommentModel> commentModels = commentModelRepository.findAll();
 
+        for (QuestionModel qm : questionModels) {
+            StExThread stExThread = new StExThread();
+            stExThread.question = qm;
+            List<AnswerModel> ams = answerModels.stream().filter(am -> am.questionId==qm.questionId).collect(Collectors.toList());
+            stExThread.answers = ams;
+            List<CommentModel> cmsFq = commentModels.stream().filter(cm -> cm.postId==qm.questionId).collect(Collectors.toList());
+            stExThread.commentsForquestion = cmsFq;
+
+            Map<Long, List<CommentModel>> answerId2Comments = new HashMap<>();
+            for (AnswerModel am : answerModels) {
+                List<CommentModel> cmsFa = commentModels.stream().filter(cm -> cm.postId==am.answerId).collect(Collectors.toList());
+                answerId2Comments.put(am.answerId, cmsFa);
+            }
+            stExThread.answerId2Comments = answerId2Comments;
+
+            Gson gson = new Gson();
+            String thJson = gson.toJson(stExThread);
+
+            StExThreadModel thModel = new StExThreadModel();
+            thModel.questionId = qm.questionId;
+            thModel.threadJson = thJson;
+            stExThreadModelRepository.save(thModel);
+        }
+    }
 
 
 
