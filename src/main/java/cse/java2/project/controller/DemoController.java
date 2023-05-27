@@ -12,7 +12,7 @@ public class DemoController {
      * @return the name of the view to be rendered
      * You can find the static HTML file in src/main/resources/templates/demo.html
      */
-    @GetMapping({"/", "/demo"})
+    @GetMapping({ "/demo"})
     public String demo() {
         return "demo";
     }

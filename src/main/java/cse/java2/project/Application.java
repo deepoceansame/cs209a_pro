@@ -1,6 +1,7 @@
 package cse.java2.project;
 
 
+import cse.java2.project.service.WholeService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -16,7 +17,7 @@ public class Application {
     public static ConfigurableApplicationContext ac;
     public static void main(String[] args) throws ParseException, IOException {
         ac = SpringApplication.run(Application.class, args);
-        GrabScri grabScri = ac.getBean(GrabScri.class);
+//        GrabScri grabScri = ac.getBean(GrabScri.class);
 //        grabScri.getQuestion();
 //        grabScri.getAnswersForEachQuestionCollected();
 //        grabScri.seeQuestionsCollected();
@@ -24,7 +25,14 @@ public class Application {
 //        grabScri.getCommentsForCollectedQuestions();
 //        grabScri.getCommentsForCollectedAnswers();
 //        grabScri.getQuestionsAndAnswers();
-        grabScri.seeCommentsCollected();
+//        grabScri.seeCommentsCollected();
+
+        WholeService ser = ac.getBean(WholeService.class);
+//        ser.numberOfAnswer();
+        ser.acceptedAnswer();
+
+
+
     }
 
 }
