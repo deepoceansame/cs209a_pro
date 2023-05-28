@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.criteria.CriteriaBuilder;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -59,7 +60,7 @@ public class WholeService {
     2. average and maximum ans count
     3. distribution of ans count
      */
-    public void numberOfAnswer() {
+    public SolNumAnswer numberOfAnswer() {
         // solve 1
         int questionWithoutAnswerCnt = 0;
         double percentQuestionWithoutAns = 0;
@@ -100,6 +101,8 @@ public class WholeService {
         System.out.println(averageAnsCnt + " " + maxAnsCnt);
         System.out.println("3. distribution of ans count");
         System.out.println(ansCntDisMap);
+
+        return new SolNumAnswer(percentQuestionWithoutAns, averageAnsCnt, maxAnsCnt, new TreeMap<>(ansCntDisMap));
     }
 
     /*
@@ -110,7 +113,7 @@ public class WholeService {
 
     about 2: duration/1000
      */
-    public void acceptedAnswer() {
+    public SolAcAnswer acceptedAnswer() {
         int numOfQuestion = questionModels.size();
 
         // solve 1
@@ -170,11 +173,16 @@ public class WholeService {
         }
 
         System.out.println("1. percent of question has ac ans");
-        System.out.println((double) numOfQuestionWithAcAns / (double) numOfQuestion);
+        double percentQuestionWithAcAns = (double) numOfQuestionWithAcAns / (double) numOfQuestion;
+        System.out.println(percentQuestionWithAcAns);
         System.out.println("2. duration time distribution");
         System.out.println(durationDisMap);
         System.out.println("3. percent of question has greater ans than ac ans");
-        System.out.println((double) numOfQuestionWithGreatAnsThatNotAc / (double) numOfQuestionWithAcAns);
+        double percentQuestionWithMoreVotedUnAcAns = (double) numOfQuestionWithGreatAnsThatNotAc / (double) numOfQuestionWithAcAns;
+        System.out.println(percentQuestionWithMoreVotedUnAcAns);
+
+        SolAcAnswer solAcAnswer = new SolAcAnswer(percentQuestionWithAcAns, new TreeMap<>(durationDisMap), percentQuestionWithMoreVotedUnAcAns);
+        return solAcAnswer;
     }
 
     /*
@@ -182,7 +190,7 @@ public class WholeService {
     2. Which tags or tag combinations receive the most upvotes?
     3. Which tags or tag combinations receive the most views?
      */
-    public void tagsProblem() {
+    public SolTagAnswer tagsProblem() {
         Map<Set<String>, Integer> combiCntDistriMap = new HashMap<>();
         Map<Set<String>, Integer> combiVoteDistriMap = new HashMap<>();
         Map<Set<String>, Integer> combiViewDistriMap = new HashMap<>();
@@ -221,18 +229,38 @@ public class WholeService {
         combiCntDistriMap.entrySet().stream().sorted((e1, e2) -> e2.getValue()-e1.getValue()).limit(limitCnt).forEach(entry -> {
             System.out.println(entry.getKey() + " " + entry.getValue());
         });
+        List<Map.Entry<Set<String>, Integer>> combiCntList =  combiCntDistriMap
+                .entrySet()
+                .stream()
+                .sorted((e1, e2) -> e2.getValue()-e1.getValue())
+                .limit(limitCnt)
+                .collect(Collectors.toList());
 
         System.out.println("2. vote of combi");
 //        System.out.println(combiVoteDistriMap);
         combiVoteDistriMap.entrySet().stream().sorted((e1, e2) -> e2.getValue()-e1.getValue()).limit(limitCnt).forEach(entry -> {
             System.out.println(entry.getKey() + " " + entry.getValue());
         });
+        List<Map.Entry<Set<String>, Integer>> combiVoteList = combiVoteDistriMap
+                .entrySet()
+                .stream()
+                .sorted((e1, e2) -> e2.getValue()-e1.getValue())
+                .limit(limitCnt).
+                collect(Collectors.toList());
 
         System.out.println("3. view of combi");
 //        System.out.println(combiViewDistriMap);
         combiViewDistriMap.entrySet().stream().sorted((e1, e2) -> e2.getValue()-e1.getValue()).limit(limitCnt).forEach(entry -> {
             System.out.println(entry.getKey() + " " + entry.getValue());
         });
+        List<Map.Entry<Set<String>, Integer>> combiViewList =  combiViewDistriMap
+                .entrySet()
+                .stream()
+                .sorted((e1, e2) -> e2.getValue()-e1.getValue())
+                .limit(limitCnt)
+                .collect(Collectors.toList());
+        SolTagAnswer solTagAnswer = new SolTagAnswer(combiCntList, combiVoteList, combiViewList);
+        return solTagAnswer;
     }
 
 
@@ -240,7 +268,7 @@ public class WholeService {
     1. the number of distinct users who post the question, answers, or comments in a thread
     2. Which are the most active users who frequently participate in thread discussions
      */
-    public void userProblem() {
+    public SolUserAnswer userProblem() {
         List<StExThread> threadLis = threadList;
         System.out.println(threadLis.size());
         Map<Integer, Integer> userCntThreadDistriMap = new HashMap<>();
@@ -287,7 +315,8 @@ public class WholeService {
                 }
             }
 
-            userCntThreadDistriMap.put(userIdSet.size(), userCntThreadDistriMap.getOrDefault(userIdSet.size(), 0) + 1);
+            int userCntOfTheThread = userIdSet.size()==0 ? 1 : userIdSet.size();
+            userCntThreadDistriMap.put(userCntOfTheThread, userCntThreadDistriMap.getOrDefault(userCntOfTheThread, 0) + 1);
         }
 
         int limitCnt = 20;
@@ -298,6 +327,19 @@ public class WholeService {
         userActivityDistriMap.entrySet().stream().sorted((e1, e2) -> e2.getValue()-e1.getValue()).limit(limitCnt).forEach(entry -> {
             System.out.println(entry.getKey() + " " + entry.getValue());
         });
+        List<Map.Entry<Long, Integer>> activeUserList = userActivityDistriMap
+                .entrySet()
+                .stream()
+                .filter(e1 -> e1.getKey()!=-1)
+                .sorted((e1, e2) -> e2.getValue()-e1.getValue())
+                .limit(limitCnt)
+                .collect(Collectors.toList());
+
+        userCntThreadDistriMap = userCntThreadDistriMap.entrySet().stream().filter(entry -> entry.getKey()!=0)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (x, y) -> y, LinkedHashMap::new));
+
+        SolUserAnswer solUserAnswer = new SolUserAnswer(new TreeMap<>(userCntThreadDistriMap), activeUserList);
+        return solUserAnswer;
     }
 
 

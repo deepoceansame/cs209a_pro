@@ -28,11 +28,11 @@ public class Application {
 ////        grabScri.seeCommentsCollected();
 //        grabScri.storeThreadLis();
 
-        WholeService ser = ac.getBean(WholeService.class);
+//        WholeService ser = ac.getBean(WholeService.class);
 //        ser.numberOfAnswer();
 //        ser.acceptedAnswer();
 //        ser.tagsProblem();
-        ser.userProblem();
+//        ser.userProblem();
 //        ser.testTh2JsonAndBack();
     }
 

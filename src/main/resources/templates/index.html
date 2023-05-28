@@ -3,13 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2/dist/echarts-wordcloud.min.js"></script>
+
+    <script src="../js/one_three.js"></script>
+    <script src="../js/two_two.js"></script>
+    <script src="../js/three.js"></script>
+    <script src="../js/four_one.js"></script>
+    <script src="../js/four_two.js"></script>
 </head>
 
 <body>
-    <p>fuck you</p>
-    <div th:text="${message}">
-        <p>${message}</p>
+    <div>
+        <h1>答案数量问题</h1>
+        <h2>1. 没有答案的问题的百分比</h2>
+        <p style="font-size:50px;color:red">
+            <span th:text=" ${solNumAnswer.percentQuestionWithoutAns}"/>
+        </p>
+        <h2>2. 每个问题平均有多少答案个数 最多有几个答案</h2>
+        <p style="font-size:50px;color:red">
+            平均有 <span th:text=" ${solNumAnswer.averageAnsCnt}"/>个 <br/>
+            最多有 <span th:text="${solNumAnswer.maxAnsCnt}"/> 个
+        </p>
+        <h2>3. 问题答案数量分布情况 下面map的key是答案数量种类， value是问题个数</h2>
+        <p style="font-size:10px;color:red"><span th:text="${solNumAnswer.ansCntDisMap}"></span></p>
+        <div id="one_three" style="width: 600px;height:400px;"></div>
     </div>
 
+    <div>
+        <h1>已接受答案问题</h1>
+        <h2>1. 有接受答案的问题的百分比</h2>
+        <p style="font-size:50px;color:red"><span th:text="${solAcAnswer.percentQuestionWithAcAns}"/> </p>
+        <h2>2. 从问题创建到出现接受答案的时间间隔分布 下面map的key是小时数， value是问题个数</h2>
+        <p style="font-size:10px;color:red"><span th:text="${solAcAnswer.durationDisMap}"/> </p>
+        <div id="two_two" style="width: 600px;height:400px;"></div>
+        <h2>3. 在有接受答案的问题中 含有比接受答案更高的投票数的答案的百分比</h2>
+        <p style="font-size:50px;color:red"><span th:text="${solAcAnswer.percentQuestionWithMoreVotedUnAcAns}"/> </p>
+    </div>
+
+    <div>
+        <h1>标签问题</h1>
+        <h2>1. 出现次数较多的标签组合</h2>
+        <p style="font-size:10px;color:red"><span th:text="${solTagAnswer.combiCntList}"/> </p>
+        <div id="three_one" style="width: 600px;height:400px;"></div>
+        <h2>2. 投票数多的标签组合</h2>
+        <p style="font-size:10px;color:red"><span th:text="${solTagAnswer.combiVoteList}"/> </p>
+        <div id="three_two" style="width: 600px;height:400px;"></div>
+        <h2>3. 浏览数多的标签组合</h2>
+        <p style="font-size:10px;color:red"><span th:text="${solTagAnswer.combiViewList}"/> </p>
+        <div id="three_three" style="width: 600px;height:400px;"></div>
+    </div>
+
+    <div>
+        <h1>用户问题</h1>
+        <h2>1. 每个thread有多少用户参与的分布</h2>
+        <p style="font-size:20px;color:red"><span th:text="${solUserAnswer.userCntThreadDistriMap}"/> </p>
+        <div id="four_one" style="width: 600px;height:400px;"></div>
+        <h2>2. 哪些用户活跃较多 (根据发的问题，回答，comment数量之和)</h2>
+        <p style="font-size:10px;color:red"><span th:text="${solUserAnswer.activeUserList}"/> </p>
+
+        <h3>下图词云根据发的问题，回答，comment数量之和排列大小 各词表示用户id</h3>
+        <div id="four_two" style="width: 600px;height:400px;"></div>
+    </div>
+
+    <script th:inline="javascript">
+        var data13 = [[${solNumAnswer.ansCntDisMap}]];
+        createChart13(data13);
+
+        var data22 = [[${solAcAnswer.durationDisMap}]];
+        createChart22(data22);
+
+        var data31 = [[${solTagAnswer.combiCntMap}]];
+        createChart3(data31, 'three_one');
+        var data32 = [[${solTagAnswer.combiVoteMap}]];
+        createChart3(data32, 'three_two');
+        var data33 = [[${solTagAnswer.combiViewMap}]];
+        createChart3(data33, 'three_three');
+
+        var data41 = [[${solUserAnswer.userCntThreadDistriMap}]];
+        createChart41(data41);
+        var data42 = [[${solUserAnswer.activeUserMap}]];
+        createChart42(data42);
+    </script>
 </body>
 </html>
