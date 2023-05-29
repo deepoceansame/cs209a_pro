@@ -1,5 +1,5 @@
 function createChart3 (data, domId) {
-    console.log(data, domId);
+
     let wordcloud = echarts.init(document.getElementById(domId));
     let wordcloudData = [];
 
@@ -12,6 +12,8 @@ function createChart3 (data, domId) {
             value: data[key]
         });
     }
+
+    console.log(wordcloudData, domId);
 
     let wordcloudOption = {
         title: {

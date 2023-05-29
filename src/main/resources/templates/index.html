@@ -11,6 +11,7 @@
     <script src="../js/three.js"></script>
     <script src="../js/four_one.js"></script>
     <script src="../js/four_two.js"></script>
+    <script src="../js/four_sec.js"></script>
 </head>
 
 <body>
@@ -45,13 +46,13 @@
         <h1>标签问题</h1>
         <h2>1. 出现次数较多的标签组合</h2>
         <p style="font-size:10px;color:red"><span th:text="${solTagAnswer.combiCntList}"/> </p>
-        <div id="three_one" style="width: 600px;height:400px;"></div>
+        <div id="three_one" style="width: 1200px;height:800px;"></div>
         <h2>2. 投票数多的标签组合</h2>
         <p style="font-size:10px;color:red"><span th:text="${solTagAnswer.combiVoteList}"/> </p>
-        <div id="three_two" style="width: 600px;height:400px;"></div>
+        <div id="three_two" style="width: 1200px;height:800px;"></div>
         <h2>3. 浏览数多的标签组合</h2>
         <p style="font-size:10px;color:red"><span th:text="${solTagAnswer.combiViewList}"/> </p>
-        <div id="three_three" style="width: 600px;height:400px;"></div>
+        <div id="three_three" style="width: 1200px;height:800px;"></div>
     </div>
 
     <div>
@@ -59,7 +60,16 @@
         <h2>1. 每个thread有多少用户参与的分布</h2>
         <p style="font-size:20px;color:red"><span th:text="${solUserAnswer.userCntThreadDistriMap}"/> </p>
         <div id="four_one" style="width: 600px;height:400px;"></div>
-        <h2>2. 哪些用户活跃较多 (根据发的问题，回答，comment数量之和)</h2>
+
+        <h2>2. 对问题1分别根据答案和comment角度进行统计</h2>
+        <h3>2.1 根据答案角度</h3>
+        <p style="font-size:20px;color:red"><span th:text="${solUserAnswer.userCntThreadDistriMap_ans}"/> </p>
+        <div id="four_sec_one" style="width: 600px;height:400px;"></div>
+        <h3>2.2 根据comment角度</h3>
+        <p style="font-size:20px;color:red"><span th:text="${solUserAnswer.userCntThreadDistriMap_comment}"/> </p>
+        <div id="four_sec_two" style="width: 600px;height:400px;"></div>
+
+        <h2>3. 哪些用户活跃较多 (根据发的问题，回答，comment数量之和)</h2>
         <p style="font-size:10px;color:red"><span th:text="${solUserAnswer.activeUserList}"/> </p>
 
         <h3>下图词云根据发的问题，回答，comment数量之和排列大小 各词表示用户id</h3>
@@ -84,6 +94,11 @@
         createChart41(data41);
         var data42 = [[${solUserAnswer.activeUserMap}]];
         createChart42(data42);
+
+        var data4two1 = [[${solUserAnswer.userCntThreadDistriMap_ans}]];
+        createChart4sec(data4two1, "four_sec_one");
+        var data4two2 = [[${solUserAnswer.userCntThreadDistriMap_comment}]];
+        createChart4sec(data4two2, "four_sec_two");
     </script>
 </body>
 </html>

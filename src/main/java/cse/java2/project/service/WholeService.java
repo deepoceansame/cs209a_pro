@@ -273,10 +273,13 @@ public class WholeService {
         System.out.println(threadLis.size());
         Map<Integer, Integer> userCntThreadDistriMap = new HashMap<>();
         Map<Long, Integer> userActivityDistriMap = new HashMap<>();
-
+        Map<Integer, Integer> userCntThreadDistriMap_ans = new HashMap<>();
+        Map<Integer, Integer> userCntThreadDistriMap_comment = new HashMap<>();
 
         for (StExThread th : threadLis) {
             Set<Long> userIdSet = new HashSet<>();
+            Set<Long> userIdSet_ans = new HashSet<>();
+            Set<Long> userIdSet_comment = new HashSet<>();
             JSONObject quesJsonObject = new JSONObject(th.question.questionJson);
             JSONObject userFq = quesJsonObject.getJSONObject("owner");
             if (userFq.has("user_id")){
@@ -292,6 +295,7 @@ public class WholeService {
                     long userFqcId = userFqc.getLong("user_id");
                     userActivityDistriMap.put(userFqcId, userActivityDistriMap.getOrDefault(userFqcId, 0) + 1);
                     userIdSet.add(userFqcId);
+                    userIdSet_comment.add(userFqcId);
                 }
             }
 
@@ -303,6 +307,7 @@ public class WholeService {
                     long userFaId = userFa.getLong("user_id");
                     userActivityDistriMap.put(userFaId, userActivityDistriMap.getOrDefault(userFaId, 0) + 1);
                     userIdSet.add(userFaId);
+                    userIdSet_ans.add(userFaId);
                 }
                 for (CommentModel cm : th.answerId2Comments.get(am.answerId)) {
                     JSONObject cmJsonObject = new JSONObject(cm.commentJson);
@@ -311,12 +316,19 @@ public class WholeService {
                         long userFacId = userFac.getLong("user_id");
                         userActivityDistriMap.put(userFacId, userActivityDistriMap.getOrDefault(userFacId, 0) + 1);
                         userIdSet.add(userFacId);
+                        userIdSet_comment.add(userFacId);
                     }
                 }
             }
 
             int userCntOfTheThread = userIdSet.size()==0 ? 1 : userIdSet.size();
             userCntThreadDistriMap.put(userCntOfTheThread, userCntThreadDistriMap.getOrDefault(userCntOfTheThread, 0) + 1);
+
+            int userCntOfTheThread_ans = userIdSet_ans.size();
+            userCntThreadDistriMap_ans.put(userCntOfTheThread_ans, userCntThreadDistriMap_ans.getOrDefault(userCntOfTheThread_ans, 0) + 1);
+
+            int userCntOfTheThread_comment = userIdSet_comment.size();
+            userCntThreadDistriMap_comment.put(userCntOfTheThread_comment, userCntThreadDistriMap_comment.getOrDefault(userCntOfTheThread_comment, 0) + 1);
         }
 
         int limitCnt = 20;
@@ -338,7 +350,10 @@ public class WholeService {
         userCntThreadDistriMap = userCntThreadDistriMap.entrySet().stream().filter(entry -> entry.getKey()!=0)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (x, y) -> y, LinkedHashMap::new));
 
-        SolUserAnswer solUserAnswer = new SolUserAnswer(new TreeMap<>(userCntThreadDistriMap), activeUserList);
+        SolUserAnswer solUserAnswer = new SolUserAnswer(new TreeMap<>(userCntThreadDistriMap),
+                new TreeMap<>(userCntThreadDistriMap_ans),
+                new TreeMap<>(userCntThreadDistriMap_comment),
+                activeUserList);
         return solUserAnswer;
     }
 
