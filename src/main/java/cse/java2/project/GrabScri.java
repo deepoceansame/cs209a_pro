@@ -46,7 +46,8 @@ public class GrabScri {
 
     @Autowired
     public GrabScri(QuestionModelRepository questionModelRepository, AnswerModelRepository answerModelRepository,
-                    CommentModelRepository commentModelRepository, StExThreadModelRepository stExThreadModelRepository) {
+                    CommentModelRepository commentModelRepository,
+                    StExThreadModelRepository stExThreadModelRepository) {
         this.questionModelRepository = questionModelRepository;
         this.answerModelRepository = answerModelRepository;
         this.commentModelRepository = commentModelRepository;

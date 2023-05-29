@@ -10,7 +10,7 @@ public class AnswerModel {
     public long answerId;
 
     public long questionId;
-    @Column(name="answer_json",columnDefinition="LONGTEXT")
+    @Column(name="answer_json", columnDefinition="LONGTEXT")
     public String answerJson;
 
     public AnswerModel(long answerId, long questionId, String answerJson){
